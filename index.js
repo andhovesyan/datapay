@@ -1,14 +1,28 @@
 const axios = require("axios");
 const bsv = require("bsv");
 
-const defaults = { feeb: 1.0 };
+const callbackWrapper = func => {
+  return async (options, callback) => {
+    try {
+      result = await func(options);
+      if (callback) callback(null, result);
+      else return result;
+    } catch (err) {
+      if (callback) callback(err);
+      else throw err;
+    }
+  };
+};
+
 let insight;
 
 const connect = options => {
   insight = axios.create(options);
 };
 
-const getUTXOs = async address => {
+connect({ baseURL: "https://api.bitindex.network/api/v3/main" });
+
+module.exports.getUTXOs = async address => {
   try {
     const res = await insight.post("/addrs/utxo", {
       addrs: address.toString()
@@ -19,7 +33,7 @@ const getUTXOs = async address => {
   }
 };
 
-const broadcast = async rawtx => {
+module.exports.broadcast = async rawtx => {
   try {
     const res = await insight.post("/tx/send", { rawtx });
     return res.data ? res.data.txid : null;
@@ -28,7 +42,7 @@ const broadcast = async rawtx => {
   }
 };
 
-const build = async ({ data, safe, pay }) => {
+module.exports.build = callbackWrapper(async ({ data, safe, pay }) => {
   const tx = new bsv.Transaction();
 
   if (data && data.length) {
@@ -36,10 +50,10 @@ const build = async ({ data, safe, pay }) => {
     tx.addOutput(new bsv.Transaction.Output({ script, satoshis: 0 }));
   }
 
-  const { fee, feeb, key, to = [], filter } = pay;
+  const { fee, feeb = 1.0, key, to = [], filter } = pay;
 
   if (fee) tx.fee(fee);
-  else tx.feePerKb((feeb || defaults.feeb) * 1000);
+  else tx.feePerKb(feeb * 1000);
 
   to.forEach(receiver => tx.to(receiver.address, receiver.value));
 
@@ -48,7 +62,7 @@ const build = async ({ data, safe, pay }) => {
     const address = privateKey.toAddress();
     tx.change(address);
 
-    let utxos = await getUTXOs(address);
+    let utxos = await module.exports.getUTXOs(address);
     if (filter) utxos = filter(utxos);
     tx.from(utxos);
 
@@ -56,12 +70,12 @@ const build = async ({ data, safe, pay }) => {
   }
 
   return tx;
-};
+});
 
-const send = async options => {
-  const tx = options.tx || (await build(options));
-  return await broadcast(tx.serialize());
-};
+module.exports.send = callbackWrapper(async options => {
+  const tx = options.tx || (await module.exports.build(options));
+  return await module.exports.broadcast(tx.serialize());
+});
 
 const createDataScript = (data, safe) => {
   if (typeof data === "string") return bsv.Script.fromHex(data);
@@ -89,27 +103,4 @@ const createDataScript = (data, safe) => {
   });
 
   return s;
-};
-
-const callbackWrapper = func => {
-  return async (options, callback) => {
-    try {
-      result = await func(options);
-      if (callback) callback(null, result);
-      else return result;
-    } catch (err) {
-      if (callback) callback(err);
-      else throw err;
-    }
-  };
-};
-
-connect({ baseURL: "https://api.bitindex.network/api/v3/main" });
-
-module.exports = {
-  getUTXOs,
-  broadcast,
-  build: callbackWrapper(build),
-  send: callbackWrapper(send),
-  connect
 };
