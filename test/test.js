@@ -26,16 +26,46 @@ const utxos = [
 
 describe("#createDataScript()", function() {
   describe("with a pushdata array", function() {
-    it.skip("should add an opcode", function() {});
+    it("should add an opcode", function() {
+      const script = datapay.createDataScript([{ op: 78 }, "hello world"]);
+      assert.equal(
+        script.toASM(),
+        "OP_RETURN OP_PUSHDATA4 68656c6c6f20776f726c64"
+      );
+    });
 
-    it.skip("should add a buffer", function() {});
+    it("should add a buffer", function() {
+      const script = datapay.createDataScript([
+        Buffer.from("abc"),
+        "hello world"
+      ]);
 
-    it.skip("should add a utf-8 string", function() {});
+      assert.equal(script.toASM(), "OP_RETURN 616263 68656c6c6f20776f726c64");
+    });
 
-    it.skip("should add a hex string", function() {});
+    it("should add a utf-8 string", function() {
+      const script = datapay.createDataScript(["hello world"]);
+      assert.equal(script.toASM(), "OP_RETURN 68656c6c6f20776f726c64");
+    });
+
+    it("should add a hex string", function() {
+      const script = datapay.createDataScript(["0x6d02", "hello world"]);
+      assert.equal(script.toASM(), "OP_RETURN 6d02 68656c6c6f20776f726c64");
+    });
+
+    it("should add OP_0 with safe option", function() {
+      const script = datapay.createDataScript(["hello world"], true);
+      assert.equal(script.toASM(), "0 OP_RETURN 68656c6c6f20776f726c64");
+    });
   });
 
-  it.skip("should build from a hex string", function() {});
+  it("should build from a hex string", function() {
+    const script = datapay.createDataScript(
+      "6a04366430320b68656c6c6f20776f726c64"
+    );
+
+    assert.equal(script.toASM(), "OP_RETURN 36643032 68656c6c6f20776f726c64");
+  });
 });
 
 describe("#build()", function() {

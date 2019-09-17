@@ -46,7 +46,7 @@ module.exports.build = callbackWrapper(async ({ data, safe, pay }) => {
   const tx = new bsv.Transaction();
 
   if (data && data.length) {
-    const script = createDataScript(data, safe);
+    const script = module.exports.createDataScript(data, safe);
     tx.addOutput(new bsv.Transaction.Output({ script, satoshis: 0 }));
   }
 
@@ -77,7 +77,7 @@ module.exports.send = callbackWrapper(async options => {
   return await module.exports.broadcast(tx.serialize());
 });
 
-const createDataScript = (data, safe) => {
+module.exports.createDataScript = (data, safe) => {
   if (typeof data === "string") return bsv.Script.fromHex(data);
 
   const s = new bsv.Script();
