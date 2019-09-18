@@ -50,23 +50,25 @@ module.exports.build = callbackWrapper(async ({ data, safe, pay }) => {
     tx.addOutput(new bsv.Transaction.Output({ script, satoshis: 0 }));
   }
 
-  const { fee, feeb = 1.0, key, to = [], filter } = pay;
+  if (pay) {
+    const { fee, feeb = 1.0, key, to = [], filter } = pay;
 
-  if (fee) tx.fee(fee);
-  else tx.feePerKb(feeb * 1000);
+    if (fee) tx.fee(fee);
+    else tx.feePerKb(feeb * 1000);
 
-  to.forEach(receiver => tx.to(receiver.address, receiver.value));
+    to.forEach(receiver => tx.to(receiver.address, receiver.value));
 
-  if (key) {
-    const privateKey = new bsv.PrivateKey(key);
-    const address = privateKey.toAddress();
-    tx.change(address);
+    if (key) {
+      const privateKey = new bsv.PrivateKey(key);
+      const address = privateKey.toAddress();
+      tx.change(address);
 
-    let utxos = await module.exports.getUTXOs(address);
-    if (filter) utxos = filter(utxos);
-    tx.from(utxos);
+      let utxos = await module.exports.getUTXOs(address);
+      if (filter) utxos = filter(utxos);
+      tx.from(utxos);
 
-    tx.sign(privateKey);
+      tx.sign(privateKey);
+    }
   }
 
   return tx;
