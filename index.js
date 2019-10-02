@@ -38,7 +38,11 @@ module.exports.broadcast = async rawtx => {
     const res = await insight.post("/tx/send", { rawtx });
     return res.data ? res.data.txid : null;
   } catch (err) {
-    throw new Error(`Failed to broadcast transaction: ${err.message}`);
+    let message = err.message;
+    if (err.response && err.response.data) {
+      message = err.response.data;
+    }
+    throw new Error(`Failed to broadcast transaction: ${message}`);
   }
 };
 
