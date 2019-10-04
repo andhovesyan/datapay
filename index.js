@@ -14,6 +14,10 @@ const callbackWrapper = func => {
   };
 };
 
+const getErrorMessage = err => {
+  return (err.response && err.response.data) ? err.response.data : err.message;
+}
+
 let insight;
 
 const connect = options => {
@@ -29,7 +33,7 @@ module.exports.getUTXOs = async address => {
     });
     return res.data;
   } catch (err) {
-    throw new Error(`Failed to retrieve utxo's for ${address}: ${err.message}`);
+    throw new Error(`Failed to retrieve utxo's for ${address}: ${getErrorMessage(err)}`);
   }
 };
 
@@ -38,11 +42,7 @@ module.exports.broadcast = async rawtx => {
     const res = await insight.post("/tx/send", { rawtx });
     return res.data ? res.data.txid : null;
   } catch (err) {
-    let message = err.message;
-    if (err.response && err.response.data) {
-      message = err.response.data;
-    }
-    throw new Error(`Failed to broadcast transaction: ${message}`);
+    throw new Error(`Failed to broadcast transaction: ${getErrorMessage(err)}`);
   }
 };
 
