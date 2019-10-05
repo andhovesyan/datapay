@@ -15,7 +15,14 @@ const callbackWrapper = func => {
 };
 
 const getErrorMessage = err => {
-  return (err.response && err.response.data) ? err.response.data : err.message;
+  let message = err.message;
+  if (err.response && err.response.data) {
+    message = err.response.data.message;
+  }
+  if (message.message) {
+    message = message.message;
+  }
+  return message;
 }
 
 let insight;
