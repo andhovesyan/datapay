@@ -22,6 +22,12 @@ const getErrorMessage = err => {
   if (message.message) {
     message = message.message;
   }
+  if (message.context) {
+    message = message.context;
+  }
+  if (message.error) {
+    message = message.error;
+  }
   return message;
 }
 
@@ -34,6 +40,7 @@ const connect = options => {
 connect({ baseURL: "https://api.bitindex.network/api/v3/main" });
 
 module.exports.getUTXOs = async address => {
+  console.log('Getting utxos');
   try {
     const res = await insight.post("/addrs/utxo", {
       addrs: address.toString()
@@ -92,9 +99,7 @@ module.exports.build = callbackWrapper(async ({ data, safe, pay, utxos }) => {
       const address = privateKey.toAddress();
       tx.change(address);
 
-      if (!utxos) {
-        utxos = await module.exports.getUTXOs(address);
-      }
+      if (!utxos) utxos = await module.exports.getUTXOs(address);
       if (filter) utxos = filter(utxos);
       tx.from(utxos);
 
@@ -107,6 +112,9 @@ module.exports.build = callbackWrapper(async ({ data, safe, pay, utxos }) => {
 
 module.exports.send = callbackWrapper(async options => {
   const tx = options.tx || (await module.exports.build(options));
+  if (options.provider === 'blockchair') {
+    return await module.exports.broadcastBlockchair(tx.serialize());
+  }
   return await module.exports.broadcast(tx.serialize());
 });
 
