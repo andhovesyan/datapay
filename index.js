@@ -51,11 +51,17 @@ module.exports.getUTXOs = async address => {
   }
 };
 
-module.exports.broadcastBlockchair = async data => {
+module.exports.broadcastBlockchair = async (data, retry = true) => {
   try {
     const res = await axios.post("https://api.blockchair.com/bitcoin-sv/push/transaction", { data });
     return res.data ? res.data.data.transaction_hash : null;
   } catch (err) {
+    console.error('Failed on Blockchair');
+    console.error(getErrorMessage(err));
+    if (retry) {
+      console.error('Retring...');
+      return await module.exports.broadcast(rawtx, false);
+    }
     throw new Error(`Failed to broadcast transaction: ${getErrorMessage(err)}`);
   }
 }
@@ -65,14 +71,14 @@ module.exports.broadcast = async (rawtx, retry = true) => {
     const res = await insight.post("/tx/send", { rawtx });
     return res.data ? res.data.txid : null;
   } catch (err) {
-    console.error('Failed on bitindex');
+    console.error('Failed on BitIndex');
     console.error(getErrorMessage(err));
     if (retry) {
       console.error('Retring...');
       return await module.exports.broadcast(rawtx, false);
     } else {
       console.error('Using Blockchair...');
-      return await module.exports.broadcastBlockchair(rawtx);
+      return await module.exports.broadcastBlockchair(rawtx, false);
     }
     throw new Error(`Failed to broadcast transaction: ${getErrorMessage(err)}`);
   }
