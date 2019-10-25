@@ -60,7 +60,7 @@ module.exports.broadcastBlockchair = async (data, retry = true) => {
     console.error(getErrorMessage(err));
     if (retry) {
       console.error('Retring...');
-      return await module.exports.broadcast(rawtx, false);
+      return await module.exports.broadcast(data, false);
     }
     throw new Error(`Failed to broadcast transaction: ${getErrorMessage(err)}`);
   }
