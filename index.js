@@ -48,7 +48,7 @@ module.exports.broadcastBlockchair = async data => {
   try {
     const res = await axios.post("https://api.blockchair.com/bitcoin-sv/push/transaction", { data });
     return res.data ? res.data.data.transaction_hash : null;
-  } catch (e) {
+  } catch (err) {
     throw new Error(`Failed to broadcast transaction: ${getErrorMessage(err)}`);
   }
 }
@@ -59,7 +59,7 @@ module.exports.broadcast = async (rawtx, retry = true) => {
     return res.data ? res.data.txid : null;
   } catch (err) {
     console.error('Failed on bitindex');
-    console.error(err);
+    console.error(getErrorMessage(err));
     if (retry) {
       console.error('Retring...');
       return await module.exports.broadcast(rawtx, false);
