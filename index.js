@@ -71,7 +71,7 @@ module.exports.broadcast = async (rawtx, retry = true) => {
   }
 };
 
-module.exports.build = callbackWrapper(async ({ data, safe, pay }) => {
+module.exports.build = callbackWrapper(async ({ data, safe, pay, utxos }) => {
   const tx = new bsv.Transaction();
 
   if (data && data.length) {
@@ -92,7 +92,9 @@ module.exports.build = callbackWrapper(async ({ data, safe, pay }) => {
       const address = privateKey.toAddress();
       tx.change(address);
 
-      let utxos = await module.exports.getUTXOs(address);
+      if (!utxos) {
+        utxos = await module.exports.getUTXOs(address);
+      }
       if (filter) utxos = filter(utxos);
       tx.from(utxos);
 
