@@ -60,6 +60,15 @@ module.exports.broadcastBlockchair = async (data) => {
   }
 }
 
+module.exports.broadcastWhatsOnChain = async (txhex) => {
+  try {
+    const res = await axios.post('https://api.whatsonchain.com/v1/bsv/main/tx/raw', { txhex });
+    return res.data ? res.data : null;
+  } catch (err) {
+    throw new Error(`Failed to broadcast transaction: ${getErrorMessage(err)}`);
+  }
+}
+
 module.exports.broadcastBitIndex = async (rawtx) => {
   try {
     const res = await insight.post("/tx/send", { rawtx });
@@ -105,6 +114,9 @@ module.exports.send = callbackWrapper(async options => {
   const tx = options.tx || (await module.exports.build(options));
   if (options.provider === 'blockchair') {
     return await module.exports.broadcastBlockchair(tx.serialize());
+  }
+  if (options.provider === 'whatsonchain') {
+    return await module.exports.broadcastWhatsOnChain(tx.serialize());
   }
   return await module.exports.broadcastBitIndex(tx.serialize());
 });
